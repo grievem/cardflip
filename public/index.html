@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>CardFlip Pro - Deal Analyzer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --green: #34c759; --green-dark: #30d158; --red: #ff3b30;
+      --orange: #ff9500; --blue: #007aff; --bg: #000000;
+      --card-bg: linear-gradient(135deg, rgba(28,28,30,1) 0%, rgba(18,18,20,1) 100%);
+      --border: rgba(255,255,255,0.08); --text: #ffffff;
+      --text-muted: #8e8e93; --text-dim: #636366;
+    }
+    body { font-family: 'DM Sans', -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    .container { max-width: 480px; margin: 0 auto; min-height: 100vh; }
+    header { padding: 16px 20px; background: linear-gradient(180deg, rgba(20,20,22,1) 0%, rgba(0,0,0,0) 100%); position: sticky; top: 0; z-index: 100; border-bottom: 1px solid var(--border); }
+    .logo { display: flex; align-items: center; gap: 12px; }
+    .logo-icon { width: 42px; height: 42px; background: linear-gradient(135deg, var(--green) 0%, var(--green-dark) 100%); border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 22px; box-shadow: 0 4px 16px rgba(52,199,89,0.35); }
+    .logo h1 { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, #fff 0%, #a0a0a0 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .logo span { font-size: 10px; color: var(--text-dim); letter-spacing: 2px; text-transform: uppercase; }
+    main { padding: 20px; padding-bottom: 40px; }
+    .card { background: var(--card-bg); border-radius: 20px; padding: 24px; border: 1px solid var(--border); margin-bottom: 16px; }
+    .section-label { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; font-weight: 600; }
+    .upload-section { text-align: center; padding: 40px 24px; }
+    .upload-icon { font-size: 56px; margin-bottom: 16px; display: block; }
+    .upload-section h2 { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
+    .upload-section p { font-size: 14px; color: var(--text-muted); }
+    .upload-buttons { display: flex; gap: 12px; justify-content: center; margin-top: 28px; }
+    .btn { padding: 15px 32px; border-radius: 12px; border: none; font-size: 15px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s ease; font-family: inherit; }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary { background: linear-gradient(135deg, var(--green) 0%, var(--green-dark) 100%); color: #000; }
+    .btn-secondary { background: rgba(255,255,255,0.08); color: #fff; }
+    input[type="file"] { display: none; }
+    .loading { padding: 80px 20px; text-align: center; }
+    .spinner { width: 52px; height: 52px; border: 3px solid rgba(52,199,89,0.2); border-top-color: var(--green); border-radius: 50%; margin: 0 auto 24px; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading p { color: var(--text-muted); font-size: 15px; }
+    .loading .sub { color: var(--text-dim); font-size: 13px; margin-top: 8px; }
+    .error-banner { background: rgba(255,59,48,0.12); border: 1px solid rgba(255,59,48,0.3); border-radius: 14px; padding: 16px 20px; margin-bottom: 20px; }
+    .error-banner p { font-size: 13px; color: var(--red); line-height: 1.6; }
+    .card-header { display: flex; gap: 16px; margin-bottom: 20px; }
+    .card-thumb { width: 85px; height: 118px; border-radius: 10px; object-fit: cover; background: rgba(255,255,255,0.05); flex-shrink: 0; }
+    .card-details { flex: 1; min-width: 0; }
+    .card-name { font-size: 22px; font-weight: 700; margin-bottom: 4px; line-height: 1.2; }
+    .card-meta { font-size: 14px; color: var(--text-muted); margin-bottom: 14px; }
+    .risk-badge { display: inline-block; padding: 5px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; }
+    .risk-low { background: rgba(52,199,89,0.15); color: var(--green); }
+    .risk-medium { background: rgba(255,204,0,0.15); color: #ffcc00; }
+    .risk-high { background: rgba(255,149,0,0.15); color: var(--orange); }
+    .risk-extreme { background: rgba(255,59,48,0.15); color: var(--red); }
+    .condition-buttons { display: flex; gap: 8px; }
+    .condition-btn { flex: 1; padding: 14px 8px; border-radius: 10px; border: none; font-size: 13px; font-weight: 600; cursor: pointer; background: rgba(255,255,255,0.06); color: var(--text-muted); transition: all 0.2s ease; font-family: inherit; }
+    .condition-btn.active { background: linear-gradient(135deg, var(--green) 0%, var(--green-dark) 100%); color: #000; }
+    .price-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border); }
+    .price-box { text-align: center; }
+    .price-box .label { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+    .price-box .value { font-size: 18px; font-weight: 700; }
+    .price-box .value.low { color: var(--red); }
+    .price-box .value.avg { color: var(--green); font-size: 26px; }
+    .price-box .value.high { color: var(--blue); }
+    .price-input-wrapper { display: flex; align-items: center; background: rgba(255,255,255,0.06); border-radius: 14px; padding: 4px 18px; }
+    .price-input-wrapper span { font-size: 26px; color: var(--text-dim); margin-right: 8px; }
+    .price-input { flex: 1; padding: 18px 0; font-size: 26px; font-weight: 700; background: transparent; border: none; color: #fff; outline: none; font-family: inherit; }
+    .price-input::placeholder { color: var(--text-dim); font-weight: 400; }
+    .deal-result { margin-top: 24px; padding: 24px; border-radius: 14px; text-align: center; }
+    .deal-result h3 { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+    .deal-result p { font-size: 14px; color: var(--text-muted); }
+    .flip-analysis { margin-top: 20px; padding: 20px; background: rgba(0,0,0,0.4); border-radius: 14px; }
+    .flip-row { display: flex; justify-content: space-between; padding: 10px 0; font-size: 14px; }
+    .flip-row .label { color: var(--text-muted); }
+    .flip-row .value { font-weight: 600; }
+    .flip-row .value.negative { color: var(--red); }
+    .flip-divider { height: 1px; background: rgba(255,255,255,0.1); margin: 14px 0; }
+    .flip-row.total .label { font-weight: 700; color: #fff; }
+    .flip-row.total .value { font-size: 22px; }
+    .flip-row.total .value.positive { color: var(--green); }
+    .flip-row.total .value.negative { color: var(--red); }
+    .auth-toggle { width: 100%; padding: 18px; border-radius: 14px; background: transparent; font-size: 15px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: inherit; margin-bottom: 16px; }
+    .auth-item { display: flex; align-items: flex-start; gap: 14px; padding: 16px 0; border-bottom: 1px solid var(--border); cursor: pointer; }
+    .auth-item:last-child { border-bottom: none; }
+    .auth-checkbox { width: 24px; height: 24px; border-radius: 7px; border: 2px solid rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s ease; font-size: 14px; color: #000; }
+    .auth-checkbox.checked { background: var(--green); border-color: var(--green); }
+    .auth-item span { font-size: 14px; line-height: 1.5; color: var(--text-muted); }
+    .auth-item span.checked { color: var(--green); }
+    .sale-item { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--border); }
+    .sale-item:last-child { border-bottom: none; }
+    .sale-price { font-size: 17px; font-weight: 700; color: var(--green); margin-bottom: 4px; }
+    .sale-condition { font-size: 12px; color: var(--text-dim); }
+    .sale-date { font-size: 12px; color: var(--text-dim); text-align: right; }
+    .sale-marketplace { font-size: 11px; color: var(--text-muted); text-align: right; margin-top: 4px; }
+    .reset-btn { width: 100%; padding: 18px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: var(--text-dim); font-size: 14px; cursor: pointer; margin-top: 24px; font-family: inherit; }
+    input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type="number"] { -moz-appearance: textfield; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">
+        <div class="logo-icon">💳</div>
+        <div><h1>CardFlip</h1><span>Deal Analyzer</span></div>
+      </div>
+    </header>
+    <main>
+      <div class="error-banner hidden" id="errorBanner"><p id="errorMessage"></p></div>
+      <div class="card upload-section" id="uploadSection">
+        <span class="upload-icon">📷</span>
+        <h2>Scan Your Card</h2>
+        <p>Take a photo or upload an image to analyze</p>
+        <div class="upload-buttons">
+          <input type="file" id="cameraInput" accept="image/*" capture="environment">
+          <button class="btn btn-primary" onclick="document.getElementById('cameraInput').click()">📸 Camera</button>
+          <input type="file" id="fileInput" accept="image/*">
+          <button class="btn btn-secondary" onclick="document.getElementById('fileInput').click()">📁 Upload</button>
+        </div>
+      </div>
+      <div class="loading hidden" id="loadingState">
+        <div class="spinner"></div>
+        <p>Analyzing card...</p>
+        <p class="sub">Identifying • Fetching prices • Checking authenticity</p>
+      </div>
+      <div id="resultsSection" class="hidden">
+        <div class="card" id="cardInfo">
+          <div class="card-header">
+            <img id="cardThumb" class="card-thumb" src="" alt="Card">
+            <div class="card-details">
+              <h2 class="card-name" id="cardName"></h2>
+              <p class="card-meta" id="cardMeta"></p>
+              <span class="risk-badge" id="riskBadge"></span>
+            </div>
+          </div>
+          <div style="margin-bottom: 16px;">
+            <p class="section-label">Select Condition</p>
+            <div class="condition-buttons">
+              <button class="condition-btn active" data-condition="raw" onclick="setCondition('raw')">Raw</button>
+              <button class="condition-btn" data-condition="psa9" onclick="setCondition('psa9')">PSA 9</button>
+              <button class="condition-btn" data-condition="psa10" onclick="setCondition('psa10')">PSA 10</button>
+            </div>
+          </div>
+          <div class="price-grid">
+            <div class="price-box"><p class="label">Low</p><p class="value low" id="priceLow">--</p></div>
+            <div class="price-box"><p class="label">Average</p><p class="value avg" id="priceAvg">--</p></div>
+            <div class="price-box"><p class="label">High</p><p class="value high" id="priceHigh">--</p></div>
+          </div>
+        </div>
+        <div class="card" id="dealCalculator">
+          <p class="section-label">Deal Calculator</p>
+          <div class="price-input-wrapper">
+            <span>$</span>
+            <input type="number" class="price-input" id="askingPrice" placeholder="Enter asking price" oninput="calculateDeal()">
+          </div>
+          <div class="deal-result hidden" id="dealResult">
+            <h3 id="dealRating"></h3>
+            <p id="dealPercent"></p>
+          </div>
+          <div class="flip-analysis hidden" id="flipAnalysis">
+            <p class="section-label" style="margin-bottom: 12px;">Flip Analysis (Sell at Avg)</p>
+            <div class="flip-row"><span class="label">Buy Price</span><span class="value" id="flipBuy"></span></div>
+            <div class="flip-row"><span class="label">Sell Price (avg)</span><span class="value" id="flipSell"></span></div>
+            <div class="flip-row"><span class="label">eBay Fee (13.25%)</span><span class="value negative" id="flipEbay"></span></div>
+            <div class="flip-row"><span class="label">Payment Processing</span><span class="value negative" id="flipPayment"></span></div>
+            <div class="flip-row"><span class="label">Shipping Est.</span><span class="value negative">-$5</span></div>
+            <div class="flip-divider"></div>
+            <div class="flip-row total"><span class="label">Net Profit</span><span class="value" id="flipProfit"></span></div>
+            <div class="flip-row"><span class="label">ROI</span><span class="value" id="flipROI"></span></div>
+          </div>
+        </div>
+        <button class="auth-toggle" id="authToggle" onclick="toggleAuth()">🔍 Show Authenticity Checklist</button>
+        <div class="card hidden" id="authChecklist">
+          <p class="section-label">Verify Before Buying</p>
+          <div id="authItems"></div>
+        </div>
+        <div class="card" id="recentSales">
+          <p class="section-label">Recent Sales</p>
+          <div id="salesList"></div>
+        </div>
+        <button class="reset-btn" onclick="resetApp()">← Scan Another Card</button>
+      </div>
+    </main>
+  </div>
+  <script>
+    let currentCondition = 'raw', currentCardData = null, imagePreview = null, authChecked = {}, authVisible = false;
+    
+    async function analyzeCard(imageBase64) {
+      const response = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64, action: 'identify' }),
+      });
+      if (!response.ok) throw new Error('Failed to analyze card');
+      return response.json();
+    }
+    
+    function processResponse(data) {
+      const record = data.records?.[0];
+      if (!record) throw new Error('Could not identify card');
+      const id = record._identification?.best_match || {};
+      const pricing = record._pricing || {};
+      const listings = pricing.listings || [];
+      let priceRanges = {
+        raw: pricing.estimated_value?.raw || calcPrices(listings, 'raw'),
+        psa9: pricing.estimated_value?.psa9 || calcPrices(listings, 'psa 9'),
+        psa10: pricing.estimated_value?.psa10 || calcPrices(listings, 'psa 10'),
+      };
+      const avgVal = priceRanges.raw?.avg || 0;
+      let risk = 'LOW';
+      if (avgVal > 5000) risk = 'EXTREME';
+      else if (avgVal > 500) risk = 'HIGH';
+      else if (avgVal > 100) risk = 'MEDIUM';
+      return {
+        identification: { name: id.name || id.player || 'Unknown', year: id.year || '', set: id.set || id.brand || '', card_number: id.card_number || id.number || '' },
+        pricing: priceRanges,
+        recentSales: listings.slice(0, 5).map(l => ({ price: l.price, condition: l.condition || 'Unknown', marketplace: l.marketplace || 'eBay', date: l.date || 'Recent' })),
+        fakeRisk: risk,
+        authChecklist: ['Compare to verified images online', 'Check card stock thickness', 'Examine print quality under magnification', 'Verify color saturation', 'Check for trimming on edges', 'Verify hologram if applicable']
+      };
+    }
+    
+    function calcPrices(listings, cond) {
+      const f = listings.filter(l => l.condition?.toLowerCase().includes(cond));
+      if (!f.length) return { low: 0, avg: 0, high: 0 };
+      const p = f.map(l => l.price).sort((a,b) => a-b);
+      return { low: p[0], avg: Math.round(p.reduce((a,b) => a+b, 0) / p.length), high: p[p.length-1] };
+    }
+    
+    function fmt(n) { if (!n) return '--'; if (n >= 1e6) return `$${(n/1e6).toFixed(1)}M`; if (n >= 1e3) return `$${(n/1e3).toFixed(1)}K`; return `$${n.toLocaleString()}`; }
+    
+    function getDealRating(s, r) {
+      if (s > 35 && r !== 'LOW') return { label: '🚨 LIKELY FAKE', color: '#ff3b30', bg: 'rgba(255,59,48,0.15)' };
+      if (s > 40) return { label: '⚠️ TOO CHEAP', color: '#ff9500', bg: 'rgba(255,149,0,0.15)' };
+      if (s > 20) return { label: '🔥 GREAT DEAL', color: '#34c759', bg: 'rgba(52,199,89,0.15)' };
+      if (s > 8) return { label: '✓ GOOD DEAL', color: '#30d158', bg: 'rgba(48,209,88,0.15)' };
+      if (s > -5) return { label: '— FAIR PRICE', color: '#8e8e93', bg: 'rgba(142,142,147,0.15)' };
+      return { label: '✗ OVERPRICED', color: '#ff3b30', bg: 'rgba(255,59,48,0.15)' };
+    }
+    
+    function setCondition(c) {
+      currentCondition = c;
+      document.querySelectorAll('.condition-btn').forEach(b => b.classList.toggle('active', b.dataset.condition === c));
+      updatePrices(); calculateDeal();
+    }
+    
+    function updatePrices() {
+      if (!currentCardData) return;
+      const p = currentCardData.pricing[currentCondition] || {};
+      document.getElementById('priceLow').textContent = fmt(p.low);
+      document.getElementById('priceAvg').textContent = fmt(p.avg);
+      document.getElementById('priceHigh').textContent = fmt(p.high);
+    }
+    
+    function calculateDeal() {
+      const ask = parseFloat(document.getElementById('askingPrice').value);
+      const dr = document.getElementById('dealResult'), fa = document.getElementById('flipAnalysis');
+      if (!ask || !currentCardData) { dr.classList.add('hidden'); fa.classList.add('hidden'); return; }
+      const avg = currentCardData.pricing[currentCondition]?.avg || 0;
+      if (!avg) return;
+      const score = ((avg - ask) / avg) * 100;
+      const rating = getDealRating(score, currentCardData.fakeRisk);
+      dr.classList.remove('hidden'); dr.style.background = rating.bg;
+      document.getElementById('dealRating').textContent = rating.label;
+      document.getElementById('dealRating').style.color = rating.color;
+      document.getElementById('dealPercent').textContent = score > 0 ? `${score.toFixed(0)}% below avg` : `${Math.abs(score).toFixed(0)}% above avg`;
+      fa.classList.remove('hidden');
+      const ebay = avg * 0.1325, pay = avg * 0.029 + 0.30, profit = avg - ask - ebay - pay - 5, roi = (profit / ask) * 100;
+      document.getElementById('flipBuy').textContent = fmt(ask);
+      document.getElementById('flipSell').textContent = fmt(avg);
+      document.getElementById('flipEbay').textContent = `-${fmt(ebay)}`;
+      document.getElementById('flipPayment').textContent = `-${fmt(pay)}`;
+      const pEl = document.getElementById('flipProfit');
+      pEl.textContent = `${profit > 0 ? '+' : ''}${fmt(profit)}`;
+      pEl.className = `value ${profit > 0 ? 'positive' : 'negative'}`;
+      const rEl = document.getElementById('flipROI');
+      rEl.textContent = `${roi > 0 ? '+' : ''}${roi.toFixed(0)}%`;
+      rEl.style.color = roi > 0 ? '#34c759' : '#ff3b30';
+    }
+    
+    function toggleAuth() {
+      authVisible = !authVisible;
+      document.getElementById('authChecklist').classList.toggle('hidden', !authVisible);
+      document.getElementById('authToggle').textContent = authVisible ? '🔍 Hide Checklist' : '🔍 Show Authenticity Checklist';
+    }
+    
+    function toggleAuthItem(i) { authChecked[i] = !authChecked[i]; renderAuth(); }
+    
+    function renderAuth() {
+      if (!currentCardData) return;
+      document.getElementById('authItems').innerHTML = currentCardData.authChecklist.map((t, i) => `<div class="auth-item" onclick="toggleAuthItem(${i})"><div class="auth-checkbox ${authChecked[i] ? 'checked' : ''}">${authChecked[i] ? '✓' : ''}</div><span class="${authChecked[i] ? 'checked' : ''}">${t}</span></div>`).join('');
+    }
+    
+    function renderSales() {
+      if (!currentCardData?.recentSales?.length) { document.getElementById('recentSales').classList.add('hidden'); return; }
+      document.getElementById('recentSales').classList.remove('hidden');
+      document.getElementById('salesList').innerHTML = currentCardData.recentSales.map(s => `<div class="sale-item"><div><p class="sale-price">${fmt(s.price)}</p><p class="sale-condition">${s.condition}</p></div><div><p class="sale-date">${s.date}</p><p class="sale-marketplace">${s.marketplace}</p></div></div>`).join('');
+    }
+    
+    function showResults(data, img) {
+      currentCardData = data;
+      document.getElementById('uploadSection').classList.add('hidden');
+      document.getElementById('loadingState').classList.add('hidden');
+      document.getElementById('resultsSection').classList.remove('hidden');
+      document.getElementById('cardThumb').src = img;
+      document.getElementById('cardName').textContent = data.identification.name;
+      document.getElementById('cardMeta').textContent = `${data.identification.year} ${data.identification.set} #${data.identification.card_number}`.trim();
+      const rb = document.getElementById('riskBadge');
+      rb.textContent = `${data.fakeRisk} FAKE RISK`;
+      rb.className = `risk-badge risk-${data.fakeRisk.toLowerCase()}`;
+      const at = document.getElementById('authToggle');
+      const rc = { EXTREME: '#ff3b30', HIGH: '#ff9500', MEDIUM: '#ffcc00', LOW: '#34c759' }[data.fakeRisk];
+      at.style.border = `1px solid ${rc}`; at.style.color = rc;
+      updatePrices(); renderAuth(); renderSales();
+    }
+    
+    function resetApp() {
+      currentCardData = null; currentCondition = 'raw'; authChecked = {}; authVisible = false;
+      document.getElementById('askingPrice').value = '';
+      document.getElementById('resultsSection').classList.add('hidden');
+      document.getElementById('authChecklist').classList.add('hidden');
+      document.getElementById('dealResult').classList.add('hidden');
+      document.getElementById('flipAnalysis').classList.add('hidden');
+      document.getElementById('uploadSection').classList.remove('hidden');
+      document.getElementById('errorBanner').classList.add('hidden');
+      document.querySelectorAll('.condition-btn').forEach(b => b.classList.toggle('active', b.dataset.condition === 'raw'));
+    }
+    
+    function showError(m) { document.getElementById('errorBanner').classList.remove('hidden'); document.getElementById('errorMessage').textContent = m; }
+    
+    async function handleImage(file) {
+      if (!file) return;
+      document.getElementById('errorBanner').classList.add('hidden');
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        imagePreview = e.target.result;
+        const b64 = imagePreview.split(',')[1];
+        document.getElementById('uploadSection').classList.add('hidden');
+        document.getElementById('loadingState').classList.remove('hidden');
+        try {
+          const resp = await analyzeCard(b64);
+          const data = processResponse(resp);
+          showResults(data, imagePreview);
+        } catch (err) {
+          document.getElementById('loadingState').classList.add('hidden');
+          document.getElementById('uploadSection').classList.remove('hidden');
+          showError(err.message || 'Failed to analyze. Try again.');
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+    
+    document.getElementById('cameraInput').addEventListener('change', e => handleImage(e.target.files[0]));
+    document.getElementById('fileInput').addEventListener('change', e => handleImage(e.target.files[0]));
+  </script>
+</body>
+</html>
